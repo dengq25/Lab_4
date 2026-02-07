@@ -14,38 +14,149 @@ library(dsbox)
 
 ```{r load-data, message = FALSE}
 states <- read_csv("data/states.csv")
+data(dennys)
+data(laquinta)
+
+```
+```{r}
+summary(states)
+summary(dennys)
+summary(laquinta)
+
 ```
 
 ### Exercise 1
-
-Remove this text, and add your answer for Exercise 1 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r}
+nrow(dennys)
+ncol(dennys)
+```
+The Denny’s dataset has `r nrow(dennys)` rows and `r ncol(dennys)` columns. Each row represent a single Denny's location, including variables such as address, city, state, zipcode, longitude, and latitude.
 
 ### Exercise 2
-
-Remove this text, and add your answer for Exercise 2 here.
-Add code chunks as needed.
-Don't forget to label your code chunk.
-Do not use spaces in code chunk labels.
+```{r}
+nrow(laquinta)
+ncol(laquinta)
+```
+The La Quinta dataset has `r nrow(laquinta)` rows and `r ncol(laquinta)` columns. Each row represent a single La Quinta location, including variables such as address, city, state, zipcode, longitude, and latitude.
 
 ### Exercise 3
-
-...
+There are no Denny's outside of the U.S.. However, there are La Quinta hotels in Canada, Mexico, China, New Zealand, Europe (Georgia, Turkiye), United Arab Emirates, and South America (Colombia, Ecuador)
 
 ### Exercise 4
 
-...
+Some ideas I can think of are looking over the zip code, if the zipcode does not match the U.S. zipcode format, then the location is probably outside of the U.S.. We can also check the longitude and latitude to see if it is in the range of of the U.S.. Another option is to check the states variable to see whether or not the abbreviated state match U.S. states.
 
 ### Exercise 5
-
-...
+```{r}
+dennys %>%
+  filter(!(state %in% states$abbreviation))
+```
+there is no Denny's locataion outside of the stats
 
 ### Exercise 6
+```{r}
+dennys %>%
+  mutate(country = "United States")
+```
 
-...
 
- 
-Add exercise headings as needed.
+### Exercise 7
+```{r}
+laquinta %>%
+  filter(!(state %in% states$abbreviation))
+```
+The La Quinta hotels that are outside of the U.S. are in Mexico, Colombia, Canada, and Honduras
+### Exercise 8
+```{r}
+laquinta_country <- laquinta %>%
+  mutate(country = case_when(
+    state %in% state.abb ~ "United States",
+    state %in% c("ON", "BC") ~ "Canada",
+    state == "ANT" ~ "Colombia",
+    state == "FM" ~ "Honduras",
+    state %in% c("AG", "CH", "PU", "SL", "QR", "NL", "VE") ~ "Mexico"
+  ))
+```
 
+### Exercise 9
+```{r}
+dennys %>%
+  count(state) %>%
+  arrange(desc(n))
+```
+California has the most Denny's and Delaware has the least.
+```{r}
+laquinta_country %>%
+  filter (country == "United States") %>%
+  count(state) %>%
+  arrange(desc(n))
+```
+Texas has the most La Quinta and Maine has the least.
+These results are not suprsing, since the CA and Texas are larger  states while Delaware and Maine are small states
+
+### Exercise 10
+```{r}
+dennys %>%
+  count(state) %>%
+  inner_join(states, by = c("state" = "abbreviation")) %>%
+  mutate(per1000 = n / (area / 1000)) %>% 
+  arrange(desc(per1000))
+```
+DC has the most Denny's per 1000 sq miles.
+```{r}
+laquinta_country %>%
+  count(state) %>%
+  inner_join(states, by = c("state" = "abbreviation")) %>%
+  mutate(per1000 = n / (area / 1000)) %>% 
+  arrange(desc(per1000))
+```
+Rhode Island has the most La Quinta per 1000 sq miles
+```{r}
+dennys <- dennys %>%
+  mutate(establishment = "Denny's")
+laquinta_country <- laquinta_country %>%
+  mutate(establishment = "La Quinta")
+dn_lq <- bind_rows(dennys, laquinta_country)
+```
+```{r}
+ggplot(dn_lq, mapping = aes(
+  x = longitude,
+  y = latitude,
+  color = establishment
+)) +
+  geom_point()
+```
+
+### Exercise 11
+```{r}
+dn_lq %>%
+  filter(state == "NC") %>%
+ggplot(NConly, mapping = aes(
+  x = longitude,
+  y = latitude,
+  color = establishment
+)) +
+  geom_point(alpha = 0.3) +
+    labs(title = "Denny's and La Quinta Locations In North Carolina",
+       x = "Longitude",
+       y = "Latitude",
+       color = "Establishment")
+```
+It seems like there is a Denny's near most La Quinta in NC, but not all Denny's has a La Quinta nearby
+
+### Exercise 12
+```{r}
+dn_lq %>%
+  filter(state == "TX") %>%
+ggplot(NConly, mapping = aes(
+  x = longitude,
+  y = latitude,
+  color = establishment
+)) +
+  geom_point(alpha = 0.3) +
+    labs(title = "Denny's and La Quinta Locations In Texas",
+       x = "Longitude",
+       y = "Latitude",
+       color = "Establishment")
+```
+In Texas, it seems like most Denny's has a La Quinta nearby, but many La Quinta does not have a Dennys close to it.
